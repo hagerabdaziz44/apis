@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Traits\GeneralTrait;
+use Closure;
+use Illuminate\Http\Request;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Http\Middleware\BaseMiddleware;
+use JWTAuth;
+use Tymon\JWTAuth\Facades\JWTAuth as FacadesJWTAuth;
+
+class AssignGuard
+{
+        use GeneralTrait;
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return mixed
+     */
+    public function handle($request, Closure $next, $guard = null)
+    {
+        if($guard != null)
+        {
+                    auth()->shouldUse($guard); //shoud you user guard / table
+            $token = $request->auth_token;
+            $request->headers->set('auth_token', (string) $token, true);
+            $request->headers->set('Authorization', 'Bearer '.$token, true);
+            try {
+              //  $user = $this->auth->authenticate($request);  //check authenticted user
+                $user = FacadesJWTAuth::parseToken()->authenticate();
+            } catch (TokenExpiredException $e) {
+                return  $this -> returnError('401','Unauthenticated user');
+            } catch (JWTException $e) {
+
+                return  $this -> returnError('', 'token_invalid'.$e->getMessage());
+            }
+   
+
+        }
+         return $next($request);
+    }
+    }
+
